@@ -1,145 +1,119 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Note, Folder, Tag, Person, Bullet, TagColor } from '@/types';
+import { notesApi, foldersApi, tagsApi, peopleApi } from '@/lib/api';
 
-const generateId = () => Math.random().toString(36).substring(2, 15);
+// Helper to transform API response to frontend types
+const transformNote = (apiNote: any): Note => ({
+  id: apiNote._id || apiNote.id,
+  title: apiNote.title,
+  folderId: apiNote.folderId?._id || apiNote.folderId || null,
+  color: apiNote.color,
+  isPinned: apiNote.isPinned,
+  createdAt: new Date(apiNote.createdAt),
+  updatedAt: new Date(apiNote.updatedAt),
+  bullets: (apiNote.bullets || []).map((b: any) => ({
+    id: b._id || b.id,
+    content: b.content || '',
+    type: b.type || 'bullet',
+    checked: b.checked || false,
+    tags: (b.tags || []).map((t: any) => ({
+      id: t._id || t.id,
+      name: t.name,
+      color: t.color,
+      createdAt: new Date(t.createdAt),
+    })),
+    mentions: (b.mentions || []).map((p: any) => ({
+      id: p._id || p.id,
+      name: p.name,
+      avatar: p.avatar,
+      createdAt: new Date(p.createdAt),
+    })),
+    indent: b.indent || 0,
+    noteId: apiNote._id || apiNote.id,
+    createdAt: new Date(b.createdAt),
+    updatedAt: new Date(b.updatedAt),
+  })),
+});
 
-const defaultTags: Tag[] = [
-  { id: '1', name: 'work', color: 'blue', createdAt: new Date() },
-  { id: '2', name: 'personal', color: 'green', createdAt: new Date() },
-  { id: '3', name: 'urgent', color: 'red', createdAt: new Date() },
-  { id: '4', name: 'ideas', color: 'purple', createdAt: new Date() },
-  { id: '5', name: 'restaurants', color: 'orange', createdAt: new Date() },
-];
+const transformFolder = (apiFolder: any): Folder => ({
+  id: apiFolder._id || apiFolder.id,
+  name: apiFolder.name,
+  icon: apiFolder.icon,
+  parentId: apiFolder.parentId?._id || apiFolder.parentId || null,
+  isExpanded: apiFolder.isExpanded ?? true,
+  createdAt: new Date(apiFolder.createdAt),
+  updatedAt: new Date(apiFolder.updatedAt),
+});
 
-const defaultPeople: Person[] = [
-  { id: '1', name: 'John Smith', createdAt: new Date() },
-  { id: '2', name: 'Sarah Connor', createdAt: new Date() },
-  { id: '3', name: 'Alex Johnson', createdAt: new Date() },
-];
+const transformTag = (apiTag: any): Tag => ({
+  id: apiTag._id || apiTag.id,
+  name: apiTag.name,
+  color: apiTag.color,
+  createdAt: new Date(apiTag.createdAt),
+});
 
-const defaultFolders: Folder[] = [
-  { id: 'all', name: 'All Notes', icon: '📝', parentId: null, isExpanded: true, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'work', name: 'Work', icon: '💼', parentId: null, isExpanded: true, createdAt: new Date(), updatedAt: new Date() },
-  { id: 'personal', name: 'Personal', icon: '🏠', parentId: null, isExpanded: true, createdAt: new Date(), updatedAt: new Date() },
-];
+const transformPerson = (apiPerson: any): Person => ({
+  id: apiPerson._id || apiPerson.id,
+  name: apiPerson.name,
+  avatar: apiPerson.avatar,
+  createdAt: new Date(apiPerson.createdAt),
+});
 
-const defaultNotes: Note[] = [
-  {
-    id: '1',
-    title: 'Project Planning',
-    folderId: 'work',
-    color: 'yellow',
-    isPinned: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    bullets: [
-      {
-        id: 'b1',
-        content: 'Review quarterly goals',
-        type: 'checkbox',
-        checked: true,
-        tags: [defaultTags[0]],
-        mentions: [defaultPeople[0]],
-        indent: 0,
-        noteId: '1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'b2',
-        content: 'Schedule team meeting',
-        type: 'checkbox',
-        checked: false,
-        tags: [defaultTags[0], defaultTags[2]],
-        mentions: [],
-        indent: 0,
-        noteId: '1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'b3',
-        content: 'Prepare presentation slides',
-        type: 'bullet',
-        checked: false,
-        tags: [],
-        mentions: [defaultPeople[1]],
-        indent: 1,
-        noteId: '1',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ],
-  },
-  {
-    id: '2',
-    title: 'Favorite Restaurants',
-    folderId: 'personal',
-    color: 'green',
-    isPinned: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    bullets: [
-      {
-        id: 'b4',
-        content: 'The Italian Place - amazing pasta',
-        type: 'bullet',
-        checked: false,
-        tags: [defaultTags[4]],
-        mentions: [],
-        indent: 0,
-        noteId: '2',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: 'b5',
-        content: 'Sushi Garden - great omakase',
-        type: 'bullet',
-        checked: false,
-        tags: [defaultTags[4]],
-        mentions: [],
-        indent: 0,
-        noteId: '2',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ],
-  },
-  {
-    id: '3',
-    title: 'Ideas for the Weekend',
-    folderId: 'personal',
-    color: 'blue',
-    isPinned: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    bullets: [
-      {
-        id: 'b6',
-        content: 'Visit the new art museum',
-        type: 'checkbox',
-        checked: false,
-        tags: [defaultTags[3]],
-        mentions: [defaultPeople[2]],
-        indent: 0,
-        noteId: '3',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    ],
-  },
-];
+// Default "All Notes" folder for UI
+const allNotesFolder: Folder = {
+  id: 'all',
+  name: 'All Notes',
+  icon: '📝',
+  parentId: null,
+  isExpanded: true,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
 
 export function useNotes() {
-  const [folders, setFolders] = useState<Folder[]>(defaultFolders);
-  const [notes, setNotes] = useState<Note[]>(defaultNotes);
-  const [tags, setTags] = useState<Tag[]>(defaultTags);
-  const [people, setPeople] = useState<Person[]>(defaultPeople);
+  const [folders, setFolders] = useState<Folder[]>([allNotesFolder]);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>('all');
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>('1');
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTag, setFilterTag] = useState<Tag | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch all data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const [notesData, foldersData, tagsData, peopleData] = await Promise.all([
+          notesApi.getAll(),
+          foldersApi.getAll(),
+          tagsApi.getAll(),
+          peopleApi.getAll(),
+        ]);
+
+        setNotes(notesData.map(transformNote));
+        setFolders([allNotesFolder, ...foldersData.map(transformFolder)]);
+        setTags(tagsData.map(transformTag));
+        setPeople(peopleData.map(transformPerson));
+
+        // Select first note if available
+        if (notesData.length > 0) {
+          setSelectedNoteId(notesData[0]._id || notesData[0].id);
+        }
+      } catch (err: any) {
+        console.error('Failed to fetch data:', err);
+        setError(err.message || 'Failed to load data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // Get notes for selected folder
   const filteredNotes = useMemo(() => {
@@ -191,207 +165,208 @@ export function useNotes() {
   );
 
   // Create note
-  const createNote = useCallback((folderId: string | null = null) => {
-    const newNote: Note = {
-      id: generateId(),
-      title: 'Untitled Note',
-      folderId: folderId || selectedFolderId === 'all' ? null : selectedFolderId,
-      isPinned: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      bullets: [
-        {
-          id: generateId(),
-          content: '',
-          type: 'bullet',
-          checked: false,
-          tags: [],
-          mentions: [],
-          indent: 0,
-          noteId: '',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ],
-    };
-    newNote.bullets[0].noteId = newNote.id;
-    setNotes((prev) => [newNote, ...prev]);
-    setSelectedNoteId(newNote.id);
-    return newNote;
+  const createNote = useCallback(async (folderId: string | null = null) => {
+    try {
+      const targetFolderId = folderId || (selectedFolderId === 'all' ? null : selectedFolderId);
+      const apiNote = await notesApi.create({
+        title: 'Untitled Note',
+        folderId: targetFolderId,
+      });
+      const newNote = transformNote(apiNote);
+      setNotes((prev) => [newNote, ...prev]);
+      setSelectedNoteId(newNote.id);
+      return newNote;
+    } catch (err: any) {
+      console.error('Failed to create note:', err);
+      throw err;
+    }
   }, [selectedFolderId]);
 
   // Update note
-  const updateNote = useCallback((noteId: string, updates: Partial<Note>) => {
-    setNotes((prev) =>
-      prev.map((note) =>
-        note.id === noteId
-          ? { ...note, ...updates, updatedAt: new Date() }
-          : note
-      )
-    );
+  const updateNote = useCallback(async (noteId: string, updates: Partial<Note>) => {
+    try {
+      // Optimistic update
+      setNotes((prev) =>
+        prev.map((note) =>
+          note.id === noteId
+            ? { ...note, ...updates, updatedAt: new Date() }
+            : note
+        )
+      );
+      
+      // API call
+      await notesApi.update(noteId, updates);
+    } catch (err: any) {
+      console.error('Failed to update note:', err);
+      // Revert on error - refetch
+      const apiNote = await notesApi.getOne(noteId);
+      setNotes((prev) =>
+        prev.map((note) => (note.id === noteId ? transformNote(apiNote) : note))
+      );
+    }
   }, []);
 
   // Delete note
-  const deleteNote = useCallback((noteId: string) => {
-    setNotes((prev) => prev.filter((n) => n.id !== noteId));
-    if (selectedNoteId === noteId) {
-      setSelectedNoteId(null);
+  const deleteNote = useCallback(async (noteId: string) => {
+    try {
+      await notesApi.delete(noteId);
+      setNotes((prev) => prev.filter((n) => n.id !== noteId));
+      if (selectedNoteId === noteId) {
+        setSelectedNoteId(null);
+      }
+    } catch (err: any) {
+      console.error('Failed to delete note:', err);
     }
   }, [selectedNoteId]);
 
   // Toggle pin
-  const togglePin = useCallback((noteId: string) => {
-    setNotes((prev) =>
-      prev.map((note) =>
-        note.id === noteId ? { ...note, isPinned: !note.isPinned } : note
-      )
-    );
+  const togglePin = useCallback(async (noteId: string) => {
+    try {
+      const apiNote = await notesApi.togglePin(noteId);
+      const updatedNote = transformNote(apiNote);
+      setNotes((prev) =>
+        prev.map((note) => (note.id === noteId ? updatedNote : note))
+      );
+    } catch (err: any) {
+      console.error('Failed to toggle pin:', err);
+    }
   }, []);
 
   // Create folder
-  const createFolder = useCallback((name: string, parentId: string | null = null) => {
-    const newFolder: Folder = {
-      id: generateId(),
-      name,
-      parentId,
-      isExpanded: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    setFolders((prev) => [...prev, newFolder]);
-    return newFolder;
+  const createFolder = useCallback(async (name: string, parentId: string | null = null) => {
+    try {
+      const apiFolder = await foldersApi.create({ name, parentId: parentId || undefined });
+      const newFolder = transformFolder(apiFolder);
+      setFolders((prev) => [...prev, newFolder]);
+      return newFolder;
+    } catch (err: any) {
+      console.error('Failed to create folder:', err);
+      throw err;
+    }
   }, []);
 
   // Update folder
-  const updateFolder = useCallback((folderId: string, updates: Partial<Folder>) => {
-    setFolders((prev) =>
-      prev.map((folder) =>
-        folder.id === folderId
-          ? { ...folder, ...updates, updatedAt: new Date() }
-          : folder
-      )
-    );
+  const updateFolder = useCallback(async (folderId: string, updates: Partial<Folder>) => {
+    try {
+      await foldersApi.update(folderId, updates);
+      setFolders((prev) =>
+        prev.map((folder) =>
+          folder.id === folderId
+            ? { ...folder, ...updates, updatedAt: new Date() }
+            : folder
+        )
+      );
+    } catch (err: any) {
+      console.error('Failed to update folder:', err);
+    }
   }, []);
 
   // Delete folder
-  const deleteFolder = useCallback((folderId: string) => {
-    // Move notes to root
-    setNotes((prev) =>
-      prev.map((note) =>
-        note.folderId === folderId ? { ...note, folderId: null } : note
-      )
-    );
-    setFolders((prev) => prev.filter((f) => f.id !== folderId));
-    if (selectedFolderId === folderId) {
-      setSelectedFolderId('all');
+  const deleteFolder = useCallback(async (folderId: string) => {
+    try {
+      await foldersApi.delete(folderId);
+      // Move notes to root locally
+      setNotes((prev) =>
+        prev.map((note) =>
+          note.folderId === folderId ? { ...note, folderId: null } : note
+        )
+      );
+      setFolders((prev) => prev.filter((f) => f.id !== folderId));
+      if (selectedFolderId === folderId) {
+        setSelectedFolderId('all');
+      }
+    } catch (err: any) {
+      console.error('Failed to delete folder:', err);
     }
   }, [selectedFolderId]);
 
   // Add bullet to note
   const addBullet = useCallback(
-    (noteId: string, afterBulletId?: string, type: 'checkbox' | 'bullet' = 'bullet') => {
-      const newBullet: Bullet = {
-        id: generateId(),
-        content: '',
-        type,
-        checked: false,
-        tags: [],
-        mentions: [],
-        indent: 0,
-        noteId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      setNotes((prev) =>
-        prev.map((note) => {
-          if (note.id !== noteId) return note;
-
-          const bullets = [...note.bullets];
-          if (afterBulletId) {
-            const index = bullets.findIndex((b) => b.id === afterBulletId);
-            if (index !== -1) {
-              newBullet.indent = bullets[index].indent;
-              bullets.splice(index + 1, 0, newBullet);
-            } else {
-              bullets.push(newBullet);
-            }
-          } else {
-            bullets.push(newBullet);
-          }
-
-          return { ...note, bullets, updatedAt: new Date() };
-        })
-      );
-
-      return newBullet;
+    async (noteId: string, afterBulletId?: string, type: 'checkbox' | 'bullet' = 'bullet') => {
+      try {
+        const apiNote = await notesApi.addBullet(noteId, { afterBulletId, type });
+        const updatedNote = transformNote(apiNote);
+        setNotes((prev) =>
+          prev.map((note) => (note.id === noteId ? updatedNote : note))
+        );
+        return updatedNote.bullets[updatedNote.bullets.length - 1];
+      } catch (err: any) {
+        console.error('Failed to add bullet:', err);
+        throw err;
+      }
     },
     []
   );
 
   // Update bullet
-  const updateBullet = useCallback((noteId: string, bulletId: string, updates: Partial<Bullet>) => {
-    setNotes((prev) =>
-      prev.map((note) => {
-        if (note.id !== noteId) return note;
-        return {
-          ...note,
-          bullets: note.bullets.map((b) =>
-            b.id === bulletId ? { ...b, ...updates, updatedAt: new Date() } : b
-          ),
-          updatedAt: new Date(),
-        };
-      })
-    );
+  const updateBullet = useCallback(async (noteId: string, bulletId: string, updates: Partial<Bullet>) => {
+    try {
+      // Optimistic update for responsiveness
+      setNotes((prev) =>
+        prev.map((note) => {
+          if (note.id !== noteId) return note;
+          return {
+            ...note,
+            bullets: note.bullets.map((b) =>
+              b.id === bulletId ? { ...b, ...updates, updatedAt: new Date() } : b
+            ),
+            updatedAt: new Date(),
+          };
+        })
+      );
+
+      // Prepare update data - convert tags/mentions to IDs for API
+      const apiUpdates: any = { ...updates };
+      if (updates.tags) {
+        apiUpdates.tags = updates.tags.map((t) => t.id);
+      }
+      if (updates.mentions) {
+        apiUpdates.mentions = updates.mentions.map((p) => p.id);
+      }
+
+      await notesApi.updateBullet(noteId, bulletId, apiUpdates);
+    } catch (err: any) {
+      console.error('Failed to update bullet:', err);
+    }
   }, []);
 
   // Delete bullet
-  const deleteBullet = useCallback((noteId: string, bulletId: string) => {
-    setNotes((prev) =>
-      prev.map((note) => {
-        if (note.id !== noteId) return note;
-        const bullets = note.bullets.filter((b) => b.id !== bulletId);
-        // Ensure at least one bullet remains
-        if (bullets.length === 0) {
-          bullets.push({
-            id: generateId(),
-            content: '',
-            type: 'bullet',
-            checked: false,
-            tags: [],
-            mentions: [],
-            indent: 0,
-            noteId,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
-        }
-        return { ...note, bullets, updatedAt: new Date() };
-      })
-    );
+  const deleteBullet = useCallback(async (noteId: string, bulletId: string) => {
+    try {
+      const apiNote = await notesApi.deleteBullet(noteId, bulletId);
+      const updatedNote = transformNote(apiNote);
+      setNotes((prev) =>
+        prev.map((note) => (note.id === noteId ? updatedNote : note))
+      );
+    } catch (err: any) {
+      console.error('Failed to delete bullet:', err);
+    }
   }, []);
 
   // Create tag
-  const createTag = useCallback((name: string, color: TagColor) => {
-    const newTag: Tag = {
-      id: generateId(),
-      name: name.toLowerCase().replace(/\s+/g, '-'),
-      color,
-      createdAt: new Date(),
-    };
-    setTags((prev) => [...prev, newTag]);
-    return newTag;
+  const createTag = useCallback(async (name: string, color: TagColor) => {
+    try {
+      const apiTag = await tagsApi.create({ name, color });
+      const newTag = transformTag(apiTag);
+      setTags((prev) => [...prev, newTag]);
+      return newTag;
+    } catch (err: any) {
+      console.error('Failed to create tag:', err);
+      throw err;
+    }
   }, []);
 
   // Create person
-  const createPerson = useCallback((name: string) => {
-    const newPerson: Person = {
-      id: generateId(),
-      name,
-      createdAt: new Date(),
-    };
-    setPeople((prev) => [...prev, newPerson]);
-    return newPerson;
+  const createPerson = useCallback(async (name: string) => {
+    try {
+      const apiPerson = await peopleApi.create({ name });
+      const newPerson = transformPerson(apiPerson);
+      setPeople((prev) => [...prev, newPerson]);
+      return newPerson;
+    } catch (err: any) {
+      console.error('Failed to create person:', err);
+      throw err;
+    }
   }, []);
 
   return {
@@ -407,6 +382,8 @@ export function useNotes() {
     searchQuery,
     filterTag,
     filteredBullets,
+    isLoading,
+    error,
 
     // Actions
     setSelectedFolderId,

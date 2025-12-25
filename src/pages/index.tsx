@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const {
@@ -29,6 +30,8 @@ const Index = () => {
     searchQuery,
     filterTag,
     filteredBullets,
+    isLoading,
+    error,
     setSelectedFolderId,
     setSelectedNoteId,
     setSearchQuery,
@@ -49,31 +52,79 @@ const Index = () => {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
-  const handleCreateFolder = () => {
+  const handleCreateFolder = async () => {
     if (newFolderName.trim()) {
-      createFolder(newFolderName.trim());
-      setNewFolderName('');
-      setShowNewFolderDialog(false);
-      toast.success('Folder created');
+      try {
+        await createFolder(newFolderName.trim());
+        setNewFolderName('');
+        setShowNewFolderDialog(false);
+        toast.success('Folder created');
+      } catch {
+        toast.error('Failed to create folder');
+      }
     }
   };
 
-  const handleCreateNote = () => {
-    const note = createNote();
-    toast.success('Note created');
+  const handleCreateNote = async () => {
+    try {
+      await createNote();
+      toast.success('Note created');
+    } catch {
+      toast.error('Failed to create note');
+    }
   };
 
-  const handleDeleteNote = () => {
+  const handleDeleteNote = async () => {
     if (selectedNoteId) {
-      deleteNote(selectedNoteId);
-      toast.success('Note deleted');
+      try {
+        await deleteNote(selectedNoteId);
+        toast.success('Note deleted');
+      } catch {
+        toast.error('Failed to delete note');
+      }
     }
   };
 
-  const handleDeleteFolder = (folderId: string) => {
-    deleteFolder(folderId);
-    toast.success('Folder deleted');
+  const handleDeleteFolder = async (folderId: string) => {
+    try {
+      await deleteFolder(folderId);
+      toast.success('Folder deleted');
+    } catch {
+      toast.error('Failed to delete folder');
+    }
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading notes...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4 max-w-md text-center px-4">
+          <div className="text-4xl">⚠️</div>
+          <h2 className="text-xl font-semibold text-foreground">Connection Error</h2>
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <p className="text-xs text-muted-foreground">
+            Make sure the backend server is running at{' '}
+            <code className="bg-muted px-1 py-0.5 rounded">http://localhost:3001</code>
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
