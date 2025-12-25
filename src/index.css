@@ -1,0 +1,243 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    /* Warm, paper-like Apple Notes aesthetic */
+    --background: 45 20% 97%;
+    --foreground: 30 10% 15%;
+
+    --card: 45 25% 99%;
+    --card-foreground: 30 10% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 30 10% 15%;
+
+    /* Warm amber accent - like Apple's yellow notes */
+    --primary: 38 92% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 45 15% 92%;
+    --secondary-foreground: 30 10% 25%;
+
+    --muted: 45 10% 94%;
+    --muted-foreground: 30 8% 45%;
+
+    --accent: 38 85% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 45 15% 88%;
+    --input: 45 15% 90%;
+    --ring: 38 92% 50%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar - slightly darker warm tone */
+    --sidebar-background: 45 18% 94%;
+    --sidebar-foreground: 30 10% 25%;
+    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 45 20% 88%;
+    --sidebar-accent-foreground: 30 10% 15%;
+    --sidebar-border: 45 15% 85%;
+    --sidebar-ring: 38 92% 50%;
+
+    /* Custom note colors */
+    --note-yellow: 45 100% 90%;
+    --note-green: 142 50% 90%;
+    --note-blue: 210 80% 92%;
+    --note-pink: 340 80% 92%;
+    --note-purple: 270 60% 92%;
+
+    /* Tag colors */
+    --tag-red: 0 72% 55%;
+    --tag-orange: 25 95% 55%;
+    --tag-yellow: 45 95% 50%;
+    --tag-green: 142 70% 45%;
+    --tag-blue: 210 90% 55%;
+    --tag-purple: 270 70% 60%;
+    --tag-pink: 340 75% 60%;
+    --tag-gray: 220 10% 50%;
+  }
+
+  .dark {
+    --background: 30 10% 10%;
+    --foreground: 45 15% 95%;
+
+    --card: 30 10% 12%;
+    --card-foreground: 45 15% 95%;
+
+    --popover: 30 10% 12%;
+    --popover-foreground: 45 15% 95%;
+
+    --primary: 38 92% 55%;
+    --primary-foreground: 30 10% 10%;
+
+    --secondary: 30 10% 18%;
+    --secondary-foreground: 45 15% 90%;
+
+    --muted: 30 10% 20%;
+    --muted-foreground: 45 10% 60%;
+
+    --accent: 38 85% 55%;
+    --accent-foreground: 30 10% 10%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 10% 20%;
+    --input: 30 10% 20%;
+    --ring: 38 92% 55%;
+
+    --sidebar-background: 30 10% 8%;
+    --sidebar-foreground: 45 15% 90%;
+    --sidebar-primary: 38 92% 55%;
+    --sidebar-primary-foreground: 30 10% 10%;
+    --sidebar-accent: 30 10% 15%;
+    --sidebar-accent-foreground: 45 15% 95%;
+    --sidebar-border: 30 10% 18%;
+    --sidebar-ring: 38 92% 55%;
+
+    --note-yellow: 45 30% 18%;
+    --note-green: 142 25% 18%;
+    --note-blue: 210 30% 18%;
+    --note-pink: 340 25% 18%;
+    --note-purple: 270 25% 18%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  /* Custom scrollbar - Apple-like */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full;
+    transition: background-color 0.2s;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+}
+
+@layer utilities {
+  /* Smooth transitions */
+  .transition-smooth {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  /* Paper texture effect */
+  .paper-texture {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+
+  /* Bullet animations */
+  .bullet-enter {
+    @apply animate-in fade-in-0 slide-in-from-left-2 duration-200;
+  }
+
+  .bullet-exit {
+    @apply animate-out fade-out-0 slide-out-to-right-2 duration-150;
+  }
+
+  /* Tag pill styling */
+  .tag-pill {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-smooth;
+  }
+
+  /* Mention styling */
+  .mention {
+    @apply inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-medium text-sm;
+  }
+
+  /* Checkbox styling */
+  .bullet-checkbox {
+    @apply w-4 h-4 rounded-full border-2 border-muted-foreground/40 transition-smooth cursor-pointer;
+  }
+
+  .bullet-checkbox:hover {
+    @apply border-primary;
+  }
+
+  .bullet-checkbox.checked {
+    @apply bg-primary border-primary;
+  }
+
+  /* Note card hover effect */
+  .note-card-hover {
+    @apply hover:shadow-md hover:scale-[1.01] transition-smooth;
+  }
+
+  /* Focus ring */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+}
+
+/* Keyframe animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.2s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.2s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.15s ease-out;
+}
