@@ -245,7 +245,7 @@ export function Sidebar({
                       onSelectPerson(null);
                     }}
                     className={cn(
-                      'tag-pill text-[10px] transition-smooth pr-4 group-hover:pr-4',
+                      'tag-pill text-[11px] transition-smooth pr-4 group-hover:pr-4',
                       tagColorClasses[tag.color],
                       filterTag?.id === tag.id && 'ring-1 ring-ring'
                     )}
@@ -292,7 +292,7 @@ export function Sidebar({
                       onSelectTag(null);
                     }}
                     className={cn(
-                      'px-1.5 py-0.5 rounded text-[10px] bg-primary/10 text-primary transition-smooth pr-4 group-hover:pr-4',
+                      'px-1.5 py-0.5 rounded text-[11px] bg-primary/10 text-primary transition-smooth pr-4 group-hover:pr-4',
                       filterPerson?.id === person.id && 'ring-1 ring-ring'
                     )}
                   >

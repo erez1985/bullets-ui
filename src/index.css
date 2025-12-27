@@ -164,12 +164,12 @@
 
   /* Tag pill styling */
   .tag-pill {
-    @apply inline-flex items-center gap-0.5 px-1.5 py-0 rounded-full text-[12px] font-medium transition-smooth;
+    @apply inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[13px] font-medium transition-smooth;
   }
 
   /* Mention styling */
   .mention {
-    @apply inline-flex items-center gap-0.5 px-1 py-0 rounded bg-primary/10 text-primary font-medium text-[10px];
+    @apply inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium text-[11px];
   }
 
   /* Checkbox styling */

@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent, useCallback } from 'react';
 import { Bullet, Tag, Person, TagColor } from '@/types';
 import { cn } from '@/lib/utils';
-import { Check, Circle, GripVertical, X } from 'lucide-react';
+import { Check, Circle, GripVertical, X, Bold, Italic, Underline } from 'lucide-react';
 import { TagPopover } from './TagPopover';
 import { MentionPopover } from './MentionPopover';
 
@@ -31,7 +31,60 @@ export function BulletItem({
   const [showMentionPopover, setShowMentionPopover] = useState(false);
   const [tagSearchPosition, setTagSearchPosition] = useState(0);
   const [mentionSearchPosition, setMentionSearchPosition] = useState(0);
+  const [showFormatToolbar, setShowFormatToolbar] = useState(false);
+  const [toolbarPosition, setToolbarPosition] = useState({ top: 0, left: 0 });
   const inputRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
+  // Show format toolbar on mouseup after selection
+  const handleMouseUp = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !inputRef.current?.contains(selection.anchorNode)) {
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const containerRect = inputRef.current.getBoundingClientRect();
+
+    setToolbarPosition({
+      top: rect.top - containerRect.top - 40,
+      left: rect.left - containerRect.left + rect.width / 2,
+    });
+    setShowFormatToolbar(true);
+  }, []);
+
+  // Hide toolbar when clicking outside
+  useEffect(() => {
+    const handleMouseDown = (e: MouseEvent) => {
+      // Don't hide if clicking the toolbar itself
+      if (toolbarRef.current?.contains(e.target as Node)) {
+        return;
+      }
+      // Hide toolbar if clicking outside the current input
+      if (!inputRef.current?.contains(e.target as Node)) {
+        setShowFormatToolbar(false);
+      }
+    };
+
+    const handleKeyDown = () => {
+      // Hide toolbar when starting to type
+      setShowFormatToolbar(false);
+    };
+
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  // Format text helper
+  const formatText = (command: string) => {
+    document.execCommand(command, false);
+    inputRef.current?.focus();
+  };
 
   const tagColorClasses: Record<string, string> = {
     red: 'bg-tag-red/20 text-tag-red border-tag-red',
@@ -55,7 +108,7 @@ export function BulletItem({
       isFirstRenderRef.current = false;
       setContent(bullet.content);
       if (inputRef.current) {
-        inputRef.current.textContent = bullet.content;
+        inputRef.current.innerHTML = bullet.content;
       }
       return;
     }
@@ -68,7 +121,7 @@ export function BulletItem({
     if (!isSameBullet) {
       setContent(bullet.content);
       if (inputRef.current) {
-        inputRef.current.textContent = bullet.content;
+        inputRef.current.innerHTML = bullet.content;
       }
     }
   }, [bullet.id, bullet.content]);
@@ -81,6 +134,25 @@ export function BulletItem({
   }, [bullet.id]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    // Rich text formatting shortcuts
+    if (e.metaKey || e.ctrlKey) {
+      if (e.key === 'b') {
+        e.preventDefault();
+        formatText('bold');
+        return;
+      }
+      if (e.key === 'i') {
+        e.preventDefault();
+        formatText('italic');
+        return;
+      }
+      if (e.key === 'u') {
+        e.preventDefault();
+        formatText('underline');
+        return;
+      }
+    }
+
     // Cmd/Ctrl + Backspace - delete entire bullet
     if (e.key === 'Backspace' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
@@ -155,9 +227,10 @@ export function BulletItem({
   };
 
   const handleInput = () => {
+    const html = inputRef.current?.innerHTML || '';
     const text = inputRef.current?.textContent || '';
-    setContent(text);
-    onUpdate({ content: text });
+    setContent(html);
+    onUpdate({ content: html });
 
     // Check for tag trigger
     const lastSlashIndex = text.lastIndexOf('/');
@@ -305,6 +378,42 @@ export function BulletItem({
 
       {/* Content area */}
       <div className="flex-1 min-w-0 relative">
+        {/* Floating Format Toolbar */}
+        {showFormatToolbar && (
+          <div
+            ref={toolbarRef}
+            className="absolute z-50 flex items-center gap-0.5 bg-popover border border-border rounded-lg shadow-lg p-1 animate-scale-in"
+            style={{
+              top: toolbarPosition.top,
+              left: toolbarPosition.left,
+              transform: 'translateX(-50%)',
+            }}
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            <button
+              onClick={() => formatText('bold')}
+              className="p-1.5 rounded hover:bg-accent transition-colors"
+              title="Bold (⌘B)"
+            >
+              <Bold className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => formatText('italic')}
+              className="p-1.5 rounded hover:bg-accent transition-colors"
+              title="Italic (⌘I)"
+            >
+              <Italic className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => formatText('underline')}
+              className="p-1.5 rounded hover:bg-accent transition-colors"
+              title="Underline (⌘U)"
+            >
+              <Underline className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center gap-1">
           {/* Editable content */}
           <span
@@ -313,6 +422,7 @@ export function BulletItem({
             suppressContentEditableWarning
             onInput={handleInput}
             onKeyDown={handleKeyDown}
+            onMouseUp={handleMouseUp}
             className={cn(
               'outline-none text-foreground text-sm min-w-[50px]',
               bullet.checked && 'line-through text-muted-foreground'
