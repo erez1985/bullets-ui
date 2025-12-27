@@ -5,6 +5,8 @@ import { NotesList } from '@/components/NotesList';
 import { NoteEditor } from '@/components/NoteEditor';
 import { EmptyState } from '@/components/EmptyState';
 import { FilteredBulletsView } from '@/components/FilteredBulletsView';
+import { FilteredPeopleView } from '@/components/FilteredPeopleView';
+import { SearchModal } from '@/components/SearchModal';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 import {
@@ -22,6 +24,7 @@ const Index = () => {
   const {
     folders,
     notes,
+    allNotes,
     tags,
     people,
     selectedFolderId,
@@ -29,13 +32,16 @@ const Index = () => {
     selectedNote,
     searchQuery,
     filterTag,
+    filterPerson,
     filteredBullets,
+    filteredBulletsByPerson,
     isLoading,
     error,
     setSelectedFolderId,
     setSelectedNoteId,
     setSearchQuery,
     setFilterTag,
+    setFilterPerson,
     createNote,
     updateNote,
     deleteNote,
@@ -46,11 +52,14 @@ const Index = () => {
     updateBullet,
     deleteBullet,
     createTag,
+    deleteTag,
     createPerson,
+    deletePerson,
   } = useNotes();
 
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const handleCreateFolder = async () => {
     if (newFolderName.trim()) {
@@ -105,7 +114,21 @@ const Index = () => {
         toast.error('Failed to create note');
       });
     }
-  }, [createNote]);
+    // Cmd/Ctrl + Shift + F - Open search modal
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'f') {
+      e.preventDefault();
+      setShowSearchModal(true);
+    }
+    // Escape - Exit filter mode
+    if (e.key === 'Escape' && !showSearchModal) {
+      if (filterTag) {
+        setFilterTag(null);
+      }
+      if (filterPerson) {
+        setFilterPerson(null);
+      }
+    }
+  }, [createNote, filterTag, filterPerson, showSearchModal, setFilterTag, setFilterPerson]);
 
   useEffect(() => {
     document.addEventListener('keydown', handleGlobalKeyDown);
@@ -153,15 +176,21 @@ const Index = () => {
         <Sidebar
           folders={folders}
           tags={tags}
+          people={people}
           selectedFolderId={selectedFolderId}
           filterTag={filterTag}
+          filterPerson={filterPerson}
           searchQuery={searchQuery}
           onSelectFolder={setSelectedFolderId}
           onSelectTag={setFilterTag}
+          onSelectPerson={setFilterPerson}
           onSearchChange={setSearchQuery}
           onCreateFolder={() => setShowNewFolderDialog(true)}
           onDeleteFolder={handleDeleteFolder}
+          onDeleteTag={deleteTag}
+          onDeletePerson={deletePerson}
           onCreateNote={handleCreateNote}
+          onMoveNoteToFolder={(noteId, folderId) => updateNote(noteId, { folderId })}
         />
 
         {/* Notes List */}
@@ -180,6 +209,16 @@ const Index = () => {
             tag={filterTag}
             bullets={filteredBullets}
             onClearFilter={() => setFilterTag(null)}
+            onSelectNote={setSelectedNoteId}
+            onToggleBullet={(noteId, bulletId, checked) => 
+              updateBullet(noteId, bulletId, { checked })
+            }
+          />
+        ) : filterPerson ? (
+          <FilteredPeopleView
+            person={filterPerson}
+            bullets={filteredBulletsByPerson}
+            onClearFilter={() => setFilterPerson(null)}
             onSelectNote={setSelectedNoteId}
             onToggleBullet={(noteId, bulletId, checked) => 
               updateBullet(noteId, bulletId, { checked })
@@ -240,6 +279,18 @@ const Index = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Search Modal */}
+      <SearchModal
+        isOpen={showSearchModal}
+        notes={allNotes}
+        onClose={() => setShowSearchModal(false)}
+        onSelectNote={(noteId) => {
+          setSelectedNoteId(noteId);
+          setFilterTag(null);
+          setFilterPerson(null);
+        }}
+      />
 
       <Toaster position="bottom-right" />
     </>

@@ -17,6 +17,7 @@ interface NotesListProps {
   onSelectNote: (id: string) => void;
   onDeleteNote: (id: string) => void;
   onTogglePin: (id: string) => void;
+  onDragStart?: (noteId: string) => void;
 }
 
 export function NotesList({
@@ -26,6 +27,7 @@ export function NotesList({
   onSelectNote,
   onDeleteNote,
   onTogglePin,
+  onDragStart,
 }: NotesListProps) {
   const noteColorClasses: Record<string, string> = {
     yellow: 'bg-note-yellow',
@@ -67,6 +69,12 @@ export function NotesList({
           notes.map((note) => (
             <div
               key={note.id}
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData('text/plain', note.id);
+                e.dataTransfer.effectAllowed = 'move';
+                onDragStart?.(note.id);
+              }}
               onClick={() => onSelectNote(note.id)}
               className={cn(
                 'group relative p-2 rounded-lg cursor-pointer transition-smooth note-card-hover',

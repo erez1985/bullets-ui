@@ -79,6 +79,7 @@ export function useNotes() {
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTag, setFilterTag] = useState<Tag | null>(null);
+  const [filterPerson, setFilterPerson] = useState<Person | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -158,6 +159,16 @@ export function useNotes() {
         .map((b) => ({ ...b, noteId: note.id, noteTitle: note.title || 'Untitled' }))
     );
   }, [notes, filterTag]);
+
+  // Get bullets matching filter person (for person view)
+  const filteredBulletsByPerson = useMemo(() => {
+    if (!filterPerson) return [];
+    return notes.flatMap((note) =>
+      note.bullets
+        .filter((b) => b.mentions.some((p) => p.id === filterPerson.id))
+        .map((b) => ({ ...b, noteId: note.id, noteTitle: note.title || 'Untitled' }))
+    );
+  }, [notes, filterPerson]);
 
   const selectedNote = useMemo(
     () => notes.find((n) => n.id === selectedNoteId) || null,
@@ -462,6 +473,54 @@ export function useNotes() {
     }
   }, []);
 
+  // Delete tag and remove from all bullets
+  const deleteTag = useCallback(async (tagId: string) => {
+    try {
+      await tagsApi.delete(tagId);
+      // Remove tag from local state
+      setTags((prev) => prev.filter((t) => t.id !== tagId));
+      // Remove tag from all bullets in all notes
+      setNotes((prev) =>
+        prev.map((note) => ({
+          ...note,
+          bullets: note.bullets.map((bullet) => ({
+            ...bullet,
+            tags: bullet.tags.filter((t) => t.id !== tagId),
+          })),
+        }))
+      );
+      // Clear filter if we deleted the filtered tag
+      setFilterTag((prev) => (prev?.id === tagId ? null : prev));
+    } catch (err: any) {
+      console.error('Failed to delete tag:', err);
+      throw err;
+    }
+  }, []);
+
+  // Delete person and remove from all bullets
+  const deletePerson = useCallback(async (personId: string) => {
+    try {
+      await peopleApi.delete(personId);
+      // Remove person from local state
+      setPeople((prev) => prev.filter((p) => p.id !== personId));
+      // Remove person from all bullets in all notes
+      setNotes((prev) =>
+        prev.map((note) => ({
+          ...note,
+          bullets: note.bullets.map((bullet) => ({
+            ...bullet,
+            mentions: bullet.mentions.filter((p) => p.id !== personId),
+          })),
+        }))
+      );
+      // Clear filter if we deleted the filtered person
+      setFilterPerson((prev) => (prev?.id === personId ? null : prev));
+    } catch (err: any) {
+      console.error('Failed to delete person:', err);
+      throw err;
+    }
+  }, []);
+
   return {
     // State
     folders,
@@ -474,7 +533,9 @@ export function useNotes() {
     selectedNote,
     searchQuery,
     filterTag,
+    filterPerson,
     filteredBullets,
+    filteredBulletsByPerson,
     isLoading,
     error,
 
@@ -483,6 +544,7 @@ export function useNotes() {
     setSelectedNoteId,
     setSearchQuery,
     setFilterTag,
+    setFilterPerson,
     createNote,
     updateNote,
     deleteNote,
@@ -494,6 +556,8 @@ export function useNotes() {
     updateBullet,
     deleteBullet,
     createTag,
+    deleteTag,
     createPerson,
+    deletePerson,
   };
 }

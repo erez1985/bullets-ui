@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Folder, Tag } from '@/types';
+import { Folder, Tag, Person } from '@/types';
 import { 
   ChevronDown, 
   ChevronRight, 
@@ -9,6 +9,7 @@ import {
   Trash2,
   MoreHorizontal,
   Tag as TagIcon,
+  User,
   LogOut,
   Settings
 } from 'lucide-react';
@@ -26,15 +27,21 @@ import {
 interface SidebarProps {
   folders: Folder[];
   tags: Tag[];
+  people: Person[];
   selectedFolderId: string | null;
   filterTag: Tag | null;
+  filterPerson: Person | null;
   searchQuery: string;
   onSelectFolder: (id: string) => void;
   onSelectTag: (tag: Tag | null) => void;
+  onSelectPerson: (person: Person | null) => void;
   onSearchChange: (query: string) => void;
   onCreateFolder: () => void;
   onDeleteFolder: (id: string) => void;
+  onDeleteTag: (id: string) => void;
+  onDeletePerson: (id: string) => void;
   onCreateNote: () => void;
+  onMoveNoteToFolder: (noteId: string, folderId: string | null) => void;
 }
 
 // User avatar component with error handling for rate-limited images
@@ -62,18 +69,45 @@ function UserAvatar({ name, avatar }: { name?: string; avatar?: string | null })
 export function Sidebar({
   folders,
   tags,
+  people,
   selectedFolderId,
   filterTag,
+  filterPerson,
   searchQuery,
   onSelectFolder,
   onSelectTag,
+  onSelectPerson,
   onSearchChange,
   onCreateFolder,
   onDeleteFolder,
+  onDeleteTag,
+  onDeletePerson,
   onCreateNote,
+  onMoveNoteToFolder,
 }: SidebarProps) {
   const [isTagsExpanded, setIsTagsExpanded] = useState(true);
+  const [isPeopleExpanded, setIsPeopleExpanded] = useState(true);
+  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
   const { user, logout } = useAuth();
+
+  const handleDragOver = (e: React.DragEvent, folderId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverFolderId(folderId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverFolderId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, folderId: string) => {
+    e.preventDefault();
+    const noteId = e.dataTransfer.getData('text/plain');
+    if (noteId) {
+      onMoveNoteToFolder(noteId, folderId === 'all' ? null : folderId);
+    }
+    setDragOverFolderId(null);
+  };
 
   const tagColorClasses: Record<string, string> = {
     red: 'bg-tag-red/20 text-tag-red',
@@ -134,11 +168,15 @@ export function Sidebar({
                   onSelectFolder(folder.id);
                   onSelectTag(null);
                 }}
+                onDragOver={(e) => handleDragOver(e, folder.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, folder.id)}
                 className={cn(
                   'w-full flex items-center gap-1.5 px-2 py-1 rounded text-xs transition-smooth',
                   selectedFolderId === folder.id && !filterTag
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent/50',
+                  dragOverFolderId === folder.id && 'ring-2 ring-primary bg-primary/10'
                 )}
               >
                 <span className="text-sm">{folder.icon || '📁'}</span>
@@ -198,29 +236,78 @@ export function Sidebar({
           </button>
 
           {isTagsExpanded && (
-            <div className="space-y-0.5 mt-0.5">
+            <div className="flex flex-wrap gap-1 mt-1 px-2 ml-1.5">
               {tags.map((tag) => (
-                <button
-                  key={tag.id}
-                  onClick={() => {
-                    onSelectTag(filterTag?.id === tag.id ? null : tag);
-                  }}
-                  className={cn(
-                    'w-full flex items-center gap-1.5 px-2 py-0.5 rounded text-xs transition-smooth ml-1.5',
-                    filterTag?.id === tag.id
-                      ? 'bg-sidebar-accent font-medium'
-                      : 'hover:bg-sidebar-accent/50'
-                  )}
-                >
-                  <span
+                <div key={tag.id} className="group relative">
+                  <button
+                    onClick={() => {
+                      onSelectTag(filterTag?.id === tag.id ? null : tag);
+                      onSelectPerson(null);
+                    }}
                     className={cn(
-                      'tag-pill text-[10px]',
-                      tagColorClasses[tag.color]
+                      'tag-pill text-[10px] transition-smooth pr-4 group-hover:pr-4',
+                      tagColorClasses[tag.color],
+                      filterTag?.id === tag.id && 'ring-1 ring-ring'
                     )}
                   >
                     #{tag.name}
-                  </span>
-                </button>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteTag(tag.id);
+                    }}
+                    className="absolute right-0.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-current hover:text-destructive"
+                  >
+                    <Trash2 className="h-2.5 w-2.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* People Section */}
+        <div className="py-1 border-t border-sidebar-border mt-1">
+          <button
+            onClick={() => setIsPeopleExpanded(!isPeopleExpanded)}
+            className="w-full flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-sidebar-foreground"
+          >
+            {isPeopleExpanded ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronRight className="h-3 w-3" />
+            )}
+            <User className="h-3 w-3" />
+            <span>People</span>
+          </button>
+
+          {isPeopleExpanded && (
+            <div className="flex flex-wrap gap-1 mt-1 px-2 ml-1.5">
+              {people.map((person) => (
+                <div key={person.id} className="group relative">
+                  <button
+                    onClick={() => {
+                      onSelectPerson(filterPerson?.id === person.id ? null : person);
+                      onSelectTag(null);
+                    }}
+                    className={cn(
+                      'px-1.5 py-0.5 rounded text-[10px] bg-primary/10 text-primary transition-smooth pr-4 group-hover:pr-4',
+                      filterPerson?.id === person.id && 'ring-1 ring-ring'
+                    )}
+                  >
+                    @{person.name}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeletePerson(person.id);
+                    }}
+                    className="absolute right-0.5 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:text-destructive"
+                  >
+                    <Trash2 className="h-2.5 w-2.5" />
+                  </button>
+                </div>
               ))}
             </div>
           )}

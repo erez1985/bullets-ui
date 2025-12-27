@@ -7,7 +7,7 @@ interface TagPopoverProps {
   tags: Tag[];
   searchQuery: string;
   onSelect: (tag: Tag) => void;
-  onCreate: (name: string, color: TagColor) => Tag;
+  onCreate: (name: string, color: TagColor) => Promise<Tag>;
   onClose: () => void;
 }
 
@@ -63,8 +63,9 @@ export function TagPopover({
       } else if (e.key === 'Enter') {
         e.preventDefault();
         if (showColorPicker) {
-          const newTag = onCreate(searchQuery, selectedColor);
-          onSelect(newTag);
+          onCreate(searchQuery, selectedColor).then((newTag) => {
+            onSelect(newTag);
+          });
         } else if (selectedIndex === filteredTags.length && showCreateOption) {
           setShowColorPicker(true);
         } else if (filteredTags[selectedIndex]) {
@@ -82,8 +83,8 @@ export function TagPopover({
     };
   }, [filteredTags, selectedIndex, showCreateOption, onClose, onSelect, onCreate, searchQuery, selectedColor, showColorPicker]);
 
-  const handleCreateWithColor = (color: TagColor) => {
-    const newTag = onCreate(searchQuery, color);
+  const handleCreateWithColor = async (color: TagColor) => {
+    const newTag = await onCreate(searchQuery, color);
     onSelect(newTag);
   };
 

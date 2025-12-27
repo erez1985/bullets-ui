@@ -12,8 +12,8 @@ interface BulletItemProps {
   onUpdate: (updates: Partial<Bullet>) => void;
   onDelete: () => void;
   onAddBullet: (type: 'checkbox' | 'bullet') => void;
-  onCreateTag: (name: string, color: TagColor) => Tag;
-  onCreatePerson: (name: string) => Person;
+  onCreateTag: (name: string, color: TagColor) => Promise<Tag>;
+  onCreatePerson: (name: string) => Promise<Person>;
 }
 
 export function BulletItem({

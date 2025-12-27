@@ -31,8 +31,8 @@ interface NoteEditorProps {
   onAddBullet: (afterBulletId?: string, type?: 'checkbox' | 'bullet') => void;
   onUpdateBullet: (bulletId: string, updates: Partial<Bullet>) => void;
   onDeleteBullet: (bulletId: string) => void;
-  onCreateTag: (name: string, color: TagColor) => Tag;
-  onCreatePerson: (name: string) => Person;
+  onCreateTag: (name: string, color: TagColor) => Promise<Tag>;
+  onCreatePerson: (name: string) => Promise<Person>;
 }
 
 const noteColors = [

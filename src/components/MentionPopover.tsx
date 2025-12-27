@@ -7,7 +7,7 @@ interface MentionPopoverProps {
   people: Person[];
   searchQuery: string;
   onSelect: (person: Person) => void;
-  onCreate: (name: string) => Person;
+  onCreate: (name: string) => Promise<Person>;
   onClose: () => void;
 }
 
@@ -50,8 +50,9 @@ export function MentionPopover({
       } else if (e.key === 'Enter') {
         e.preventDefault();
         if (selectedIndex === filteredPeople.length && showCreateOption) {
-          const newPerson = onCreate(searchQuery);
-          onSelect(newPerson);
+          onCreate(searchQuery).then((newPerson) => {
+            onSelect(newPerson);
+          });
         } else if (filteredPeople[selectedIndex]) {
           onSelect(filteredPeople[selectedIndex]);
         }
@@ -106,8 +107,8 @@ export function MentionPopover({
 
             {showCreateOption && (
               <button
-                onClick={() => {
-                  const newPerson = onCreate(searchQuery);
+                onClick={async () => {
+                  const newPerson = await onCreate(searchQuery);
                   onSelect(newPerson);
                 }}
                 onMouseEnter={() => setSelectedIndex(filteredPeople.length)}
