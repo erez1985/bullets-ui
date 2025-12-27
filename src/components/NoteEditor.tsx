@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Note, Tag, Person, Bullet, TagColor } from '@/types';
 import { BulletItem } from './BulletItem';
 import { cn } from '@/lib/utils';
@@ -57,10 +57,18 @@ export function NoteEditor({
   onCreatePerson,
 }: NoteEditorProps) {
   const [title, setTitle] = useState(note.title);
+  const titleRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setTitle(note.title);
   }, [note.id, note.title]);
+
+  // Focus title when a new note with empty title is opened
+  useEffect(() => {
+    if (note.title === '' && titleRef.current) {
+      titleRef.current.focus();
+    }
+  }, [note.id]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
@@ -167,6 +175,7 @@ export function NoteEditor({
         <div className="max-w-3xl px-4 py-4">
           {/* Title */}
           <input
+            ref={titleRef}
             type="text"
             value={title}
             onChange={handleTitleChange}

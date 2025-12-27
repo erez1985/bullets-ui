@@ -96,8 +96,8 @@ const Index = () => {
 
   // Global keyboard shortcuts
   const handleGlobalKeyDown = useCallback((e: KeyboardEvent) => {
-    // Cmd/Ctrl + N - Create new note
-    if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+    // Cmd/Ctrl + K - Create new note
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
       e.preventDefault();
       createNote().then(() => {
         toast.success('Note created');
@@ -181,6 +181,9 @@ const Index = () => {
             bullets={filteredBullets}
             onClearFilter={() => setFilterTag(null)}
             onSelectNote={setSelectedNoteId}
+            onToggleBullet={(noteId, bulletId, checked) => 
+              updateBullet(noteId, bulletId, { checked })
+            }
           />
         ) : selectedNote ? (
           <NoteEditor

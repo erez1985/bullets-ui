@@ -8,6 +8,7 @@ interface FilteredBullet {
   content: string;
   type: 'checkbox' | 'bullet';
   checked: boolean;
+  noteId: string;
   noteTitle: string;
   tags: Tag[];
 }
@@ -17,6 +18,7 @@ interface FilteredBulletsViewProps {
   bullets: FilteredBullet[];
   onClearFilter: () => void;
   onSelectNote: (noteId: string) => void;
+  onToggleBullet: (noteId: string, bulletId: string, checked: boolean) => void;
 }
 
 const tagColorClasses: Record<string, string> = {
@@ -34,6 +36,8 @@ export function FilteredBulletsView({
   tag,
   bullets,
   onClearFilter,
+  onSelectNote,
+  onToggleBullet,
 }: FilteredBulletsViewProps) {
   return (
     <div className="flex-1 h-screen flex flex-col bg-card overflow-hidden">
@@ -78,23 +82,31 @@ export function FilteredBulletsView({
               {bullets.map((bullet) => (
                 <div
                   key={bullet.id}
-                  className="flex items-center gap-2 p-2 rounded-lg bg-card border border-border hover:shadow-soft transition-smooth"
+                  onClick={() => {
+                    onSelectNote(bullet.noteId);
+                    onClearFilter();
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-lg bg-card border border-border hover:shadow-soft hover:bg-accent/50 transition-smooth cursor-pointer"
                 >
                   {/* Checkbox/Bullet */}
                   <div className="flex-shrink-0">
                     {bullet.type === 'checkbox' ? (
-                      <div
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleBullet(bullet.noteId, bullet.id, !bullet.checked);
+                        }}
                         className={cn(
-                          'w-4 h-4 rounded-full border-2 flex items-center justify-center',
+                          'w-4 h-4 rounded-full border-2 flex items-center justify-center transition-smooth',
                           bullet.checked
                             ? 'bg-primary border-primary'
-                            : 'border-muted-foreground/40'
+                            : 'border-muted-foreground/40 hover:border-primary'
                         )}
                       >
                         {bullet.checked && (
                           <Check className="h-2.5 w-2.5 text-primary-foreground" />
                         )}
-                      </div>
+                      </button>
                     ) : (
                       <Circle className="h-1.5 w-1.5 fill-muted-foreground text-muted-foreground" />
                     )}

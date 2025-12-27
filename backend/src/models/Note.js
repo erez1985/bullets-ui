@@ -54,7 +54,7 @@ const noteSchema = new mongoose.Schema(
     },
     title: {
       type: String,
-      default: 'Untitled Note',
+      default: '',
       trim: true,
       maxlength: [200, 'Title cannot exceed 200 characters'],
     },

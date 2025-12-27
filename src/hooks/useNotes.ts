@@ -155,7 +155,7 @@ export function useNotes() {
     return notes.flatMap((note) =>
       note.bullets
         .filter((b) => b.tags.some((t) => t.id === filterTag.id))
-        .map((b) => ({ ...b, noteTitle: note.title }))
+        .map((b) => ({ ...b, noteId: note.id, noteTitle: note.title || 'Untitled' }))
     );
   }, [notes, filterTag]);
 
@@ -169,7 +169,7 @@ export function useNotes() {
     try {
       const targetFolderId = folderId || (selectedFolderId === 'all' ? null : selectedFolderId);
       const apiNote = await notesApi.create({
-        title: 'Untitled Note',
+        title: '',
         folderId: targetFolderId,
       });
       const newNote = transformNote(apiNote);
