@@ -3,7 +3,7 @@ const { Folder, Note } = require('../models');
 // Get all folders
 exports.getAllFolders = async (req, res) => {
   try {
-    const folders = await Folder.find()
+    const folders = await Folder.find({ userId: req.userId })
       .populate('children')
       .sort({ order: 1, createdAt: 1 });
     
@@ -23,7 +23,8 @@ exports.getAllFolders = async (req, res) => {
 // Get single folder
 exports.getFolder = async (req, res) => {
   try {
-    const folder = await Folder.findById(req.params.id).populate('children');
+    const folder = await Folder.findOne({ _id: req.params.id, userId: req.userId })
+      .populate('children');
     
     if (!folder) {
       return res.status(404).json({
@@ -47,7 +48,10 @@ exports.getFolder = async (req, res) => {
 // Create folder
 exports.createFolder = async (req, res) => {
   try {
-    const folder = await Folder.create(req.body);
+    const folder = await Folder.create({
+      ...req.body,
+      userId: req.userId,
+    });
     
     res.status(201).json({
       success: true,
@@ -64,8 +68,8 @@ exports.createFolder = async (req, res) => {
 // Update folder
 exports.updateFolder = async (req, res) => {
   try {
-    const folder = await Folder.findByIdAndUpdate(
-      req.params.id,
+    const folder = await Folder.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
       req.body,
       { new: true, runValidators: true }
     );
@@ -92,7 +96,7 @@ exports.updateFolder = async (req, res) => {
 // Delete folder
 exports.deleteFolder = async (req, res) => {
   try {
-    const folder = await Folder.findById(req.params.id);
+    const folder = await Folder.findOne({ _id: req.params.id, userId: req.userId });
     
     if (!folder) {
       return res.status(404).json({
@@ -103,15 +107,15 @@ exports.deleteFolder = async (req, res) => {
     
     // Move notes in this folder to root (null folderId)
     await Note.updateMany(
-      { folderId: req.params.id },
+      { folderId: req.params.id, userId: req.userId },
       { folderId: null }
     );
     
     // Delete child folders recursively
-    await Folder.deleteMany({ parentId: req.params.id });
+    await Folder.deleteMany({ parentId: req.params.id, userId: req.userId });
     
     // Delete the folder
-    await Folder.findByIdAndDelete(req.params.id);
+    await Folder.findOneAndDelete({ _id: req.params.id, userId: req.userId });
     
     res.json({
       success: true,
@@ -124,4 +128,3 @@ exports.deleteFolder = async (req, res) => {
     });
   }
 };
-

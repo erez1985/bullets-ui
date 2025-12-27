@@ -46,6 +46,12 @@ const bulletSchema = new mongoose.Schema(
 // Main Note schema
 const noteSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true,
+    },
     title: {
       type: String,
       default: 'Untitled Note',
@@ -76,9 +82,9 @@ const noteSchema = new mongoose.Schema(
 );
 
 // Indexes for common queries
-noteSchema.index({ folderId: 1 });
-noteSchema.index({ isPinned: -1, updatedAt: -1 });
-noteSchema.index({ 'bullets.tags': 1 });
+noteSchema.index({ userId: 1, folderId: 1 });
+noteSchema.index({ userId: 1, isPinned: -1, updatedAt: -1 });
+noteSchema.index({ userId: 1, 'bullets.tags': 1 });
 noteSchema.index({ title: 'text', 'bullets.content': 'text' });
 
 // Pre-save middleware to ensure at least one bullet exists
@@ -98,4 +104,3 @@ noteSchema.pre('save', function (next) {
 });
 
 module.exports = mongoose.model('Note', noteSchema);
-

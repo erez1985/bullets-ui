@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 const personSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true,
+    },
     name: {
       type: String,
       required: [true, 'Person name is required'],
@@ -21,7 +27,6 @@ const personSchema = new mongoose.Schema(
 );
 
 // Index for faster lookups
-personSchema.index({ name: 1 });
+personSchema.index({ userId: 1, name: 1 });
 
 module.exports = mongoose.model('Person', personSchema);
-

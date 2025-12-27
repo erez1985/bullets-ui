@@ -38,25 +38,25 @@ export function FilteredBulletsView({
   return (
     <div className="flex-1 h-screen flex flex-col bg-card overflow-hidden">
       {/* Header */}
-      <header className="flex items-center gap-4 px-6 py-4 border-b border-border">
+      <header className="flex items-center gap-2 px-4 py-2 border-b border-border">
         <Button
           variant="ghost"
           size="icon"
           onClick={onClearFilter}
-          className="h-8 w-8"
+          className="h-6 w-6"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-3.5 w-3.5" />
         </Button>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <span
             className={cn(
-              'tag-pill border text-sm',
+              'tag-pill border',
               tagColorClasses[tag.color]
             )}
           >
             #{tag.name}
           </span>
-          <span className="text-muted-foreground">
+          <span className="text-muted-foreground text-xs">
             {bullets.length} item{bullets.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -64,39 +64,39 @@ export function FilteredBulletsView({
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto paper-texture">
-        <div className="max-w-3xl mx-auto px-6 py-8">
-          <h1 className="text-2xl font-semibold text-foreground mb-6">
+        <div className="max-w-3xl px-4 py-4">
+          <h1 className="text-lg font-semibold text-foreground mb-3">
             All items tagged #{tag.name}
           </h1>
 
           {bullets.length === 0 ? (
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               No items found with this tag.
             </p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {bullets.map((bullet) => (
                 <div
                   key={bullet.id}
-                  className="flex items-start gap-3 p-4 rounded-xl bg-card border border-border hover:shadow-soft transition-smooth"
+                  className="flex items-center gap-2 p-2 rounded-lg bg-card border border-border hover:shadow-soft transition-smooth"
                 >
                   {/* Checkbox/Bullet */}
-                  <div className="flex-shrink-0 mt-0.5">
+                  <div className="flex-shrink-0">
                     {bullet.type === 'checkbox' ? (
                       <div
                         className={cn(
-                          'w-4 h-4 rounded-md border-2 flex items-center justify-center',
+                          'w-4 h-4 rounded-full border-2 flex items-center justify-center',
                           bullet.checked
                             ? 'bg-primary border-primary'
                             : 'border-muted-foreground/40'
                         )}
                       >
                         {bullet.checked && (
-                          <Check className="h-3 w-3 text-primary-foreground" />
+                          <Check className="h-2.5 w-2.5 text-primary-foreground" />
                         )}
                       </div>
                     ) : (
-                      <Circle className="h-2 w-2 fill-muted-foreground text-muted-foreground mt-1.5" />
+                      <Circle className="h-1.5 w-1.5 fill-muted-foreground text-muted-foreground" />
                     )}
                   </div>
 
@@ -104,24 +104,24 @@ export function FilteredBulletsView({
                   <div className="flex-1 min-w-0">
                     <p
                       className={cn(
-                        'text-foreground',
+                        'text-foreground text-sm',
                         bullet.checked && 'line-through text-muted-foreground'
                       )}
                     >
                       {bullet.content || 'Empty item'}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
                       From: {bullet.noteTitle}
                     </p>
                   </div>
 
                   {/* Tags */}
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-0.5">
                     {bullet.tags.map((t) => (
                       <span
                         key={t.id}
                         className={cn(
-                          'tag-pill border text-xs',
+                          'tag-pill border',
                           tagColorClasses[t.color]
                         )}
                       >

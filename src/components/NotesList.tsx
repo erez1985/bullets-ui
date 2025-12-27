@@ -42,12 +42,12 @@ export function NotesList({
   };
 
   return (
-    <div className="w-72 h-screen flex flex-col bg-card border-r border-border">
+    <div className="w-64 h-screen flex flex-col bg-card border-r border-border">
       {/* Header */}
-      <div className="p-4 border-b border-border">
-        <h2 className="font-medium text-foreground">
+      <div className="px-3 py-2 border-b border-border">
+        <h2 className="font-medium text-foreground text-sm">
           {filterTag ? (
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5">
               Filtered by <span className="text-primary">#{filterTag.name}</span>
             </span>
           ) : (
@@ -57,7 +57,7 @@ export function NotesList({
       </div>
 
       {/* Notes List */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+      <div className="flex-1 overflow-y-auto p-1.5 space-y-1">
         {notes.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
             <p className="text-sm">No notes yet</p>
@@ -69,7 +69,7 @@ export function NotesList({
               key={note.id}
               onClick={() => onSelectNote(note.id)}
               className={cn(
-                'group relative p-3 rounded-xl cursor-pointer transition-smooth note-card-hover',
+                'group relative p-2 rounded-lg cursor-pointer transition-smooth note-card-hover',
                 note.color ? noteColorClasses[note.color] : 'bg-muted/50',
                 selectedNoteId === note.id
                   ? 'ring-2 ring-primary shadow-soft'
@@ -78,27 +78,27 @@ export function NotesList({
             >
               {/* Pin indicator */}
               {note.isPinned && (
-                <Pin className="absolute top-2 right-2 h-3.5 w-3.5 text-primary fill-primary" />
+                <Pin className="absolute top-1.5 right-1.5 h-3 w-3 text-primary fill-primary" />
               )}
 
               {/* Title */}
-              <h3 className="font-medium text-foreground truncate pr-6">
+              <h3 className="font-medium text-sm text-foreground truncate pr-5">
                 {note.title}
               </h3>
 
               {/* Preview */}
-              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                 {getPreview(note)}
               </p>
 
               {/* Date */}
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-[10px] text-muted-foreground mt-1">
                 {format(note.updatedAt, 'MMM d, yyyy')}
               </p>
 
               {/* Tags preview */}
               {note.bullets.some((b) => b.tags.length > 0) && (
-                <div className="flex flex-wrap gap-1 mt-2">
+                <div className="flex flex-wrap gap-0.5 mt-1">
                   {Array.from(
                     new Set(
                       note.bullets.flatMap((b) => b.tags.map((t) => t.name))
@@ -108,7 +108,7 @@ export function NotesList({
                     .map((tagName) => (
                       <span
                         key={tagName}
-                        className="text-xs px-1.5 py-0.5 rounded bg-foreground/10 text-foreground/70"
+                        className="text-[10px] px-1 py-0 rounded bg-foreground/10 text-foreground/70"
                       >
                         #{tagName}
                       </span>
@@ -117,28 +117,28 @@ export function NotesList({
               )}
 
               {/* Actions */}
-              <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute bottom-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7"
+                      className="h-6 w-6"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <MoreHorizontal className="h-4 w-4" />
+                      <MoreHorizontal className="h-3.5 w-3.5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuContent align="end" className="w-36">
                     <DropdownMenuItem onClick={() => onTogglePin(note.id)}>
-                      <Pin className="h-4 w-4 mr-2" />
+                      <Pin className="h-3.5 w-3.5 mr-2" />
                       {note.isPinned ? 'Unpin' : 'Pin'}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => onDeleteNote(note.id)}
                       className="text-destructive focus:text-destructive"
                     >
-                      <Trash2 className="h-4 w-4 mr-2" />
+                      <Trash2 className="h-3.5 w-3.5 mr-2" />
                       Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>

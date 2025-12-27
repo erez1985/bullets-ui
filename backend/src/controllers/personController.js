@@ -3,7 +3,7 @@ const { Person, Note } = require('../models');
 // Get all people
 exports.getAllPeople = async (req, res) => {
   try {
-    const people = await Person.find().sort({ name: 1 });
+    const people = await Person.find({ userId: req.userId }).sort({ name: 1 });
     
     res.json({
       success: true,
@@ -21,7 +21,7 @@ exports.getAllPeople = async (req, res) => {
 // Get single person
 exports.getPerson = async (req, res) => {
   try {
-    const person = await Person.findById(req.params.id);
+    const person = await Person.findOne({ _id: req.params.id, userId: req.userId });
     
     if (!person) {
       return res.status(404).json({
@@ -45,7 +45,10 @@ exports.getPerson = async (req, res) => {
 // Create person
 exports.createPerson = async (req, res) => {
   try {
-    const person = await Person.create(req.body);
+    const person = await Person.create({
+      ...req.body,
+      userId: req.userId,
+    });
     
     res.status(201).json({
       success: true,
@@ -62,8 +65,8 @@ exports.createPerson = async (req, res) => {
 // Update person
 exports.updatePerson = async (req, res) => {
   try {
-    const person = await Person.findByIdAndUpdate(
-      req.params.id,
+    const person = await Person.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
       req.body,
       { new: true, runValidators: true }
     );
@@ -90,7 +93,7 @@ exports.updatePerson = async (req, res) => {
 // Delete person
 exports.deletePerson = async (req, res) => {
   try {
-    const person = await Person.findById(req.params.id);
+    const person = await Person.findOne({ _id: req.params.id, userId: req.userId });
     
     if (!person) {
       return res.status(404).json({
@@ -101,11 +104,11 @@ exports.deletePerson = async (req, res) => {
     
     // Remove person from all notes' bullets
     await Note.updateMany(
-      { 'bullets.mentions': req.params.id },
+      { 'bullets.mentions': req.params.id, userId: req.userId },
       { $pull: { 'bullets.$[].mentions': req.params.id } }
     );
     
-    await Person.findByIdAndDelete(req.params.id);
+    await Person.findOneAndDelete({ _id: req.params.id, userId: req.userId });
     
     res.json({
       success: true,
@@ -122,7 +125,7 @@ exports.deletePerson = async (req, res) => {
 // Get bullets by person (mentions)
 exports.getBulletsByPerson = async (req, res) => {
   try {
-    const person = await Person.findById(req.params.id);
+    const person = await Person.findOne({ _id: req.params.id, userId: req.userId });
     
     if (!person) {
       return res.status(404).json({
@@ -131,7 +134,7 @@ exports.getBulletsByPerson = async (req, res) => {
       });
     }
     
-    const notes = await Note.find({ 'bullets.mentions': req.params.id })
+    const notes = await Note.find({ 'bullets.mentions': req.params.id, userId: req.userId })
       .populate('bullets.tags')
       .populate('bullets.mentions');
     
@@ -157,4 +160,3 @@ exports.getBulletsByPerson = async (req, res) => {
     });
   }
 };
-

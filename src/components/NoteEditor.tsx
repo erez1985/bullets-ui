@@ -85,13 +85,13 @@ export function NoteEditor({
   return (
     <div className="flex-1 h-screen flex flex-col bg-card overflow-hidden">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-border">
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <Calendar className="h-4 w-4" />
-          <span>{format(note.updatedAt, 'MMMM d, yyyy · h:mm a')}</span>
+      <header className="flex items-center justify-between px-4 py-2 border-b border-border">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5" />
+          <span>{format(note.updatedAt, 'MMM d, yyyy · h:mm a')}</span>
           {note.isPinned && (
             <span className="flex items-center gap-1 text-primary">
-              <Pin className="h-3.5 w-3.5 fill-current" />
+              <Pin className="h-3 w-3 fill-current" />
               Pinned
             </span>
           )}
@@ -164,7 +164,7 @@ export function NoteEditor({
           noteColorClass
         )}
       >
-        <div className="max-w-3xl px-6 py-8">
+        <div className="max-w-3xl px-4 py-4">
           {/* Title */}
           <input
             type="text"
@@ -172,14 +172,14 @@ export function NoteEditor({
             onChange={handleTitleChange}
             onKeyDown={handleTitleKeyDown}
             placeholder="Note Title"
-            className="w-full text-3xl font-semibold bg-transparent border-none outline-none placeholder:text-muted-foreground/50 mb-6"
+            className="w-full text-2xl font-semibold bg-transparent border-none outline-none placeholder:text-muted-foreground/50 mb-3"
           />
 
           {/* Bullets */}
-          <div className="space-y-0.5">
-            {note.bullets.map((bullet) => (
+          <div className="space-y-0">
+            {note.bullets.map((bullet, index) => (
               <BulletItem
-                key={bullet.id}
+                key={`${note.id}-${index}`}
                 bullet={bullet}
                 tags={tags}
                 people={people}
@@ -193,23 +193,23 @@ export function NoteEditor({
           </div>
 
           {/* Quick add buttons */}
-          <div className="flex items-center gap-2 mt-6 pt-4 border-t border-border/50">
+          <div className="flex items-center gap-1 mt-4 pt-3 border-t border-border/50">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onAddBullet(undefined, 'bullet')}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground h-7 text-xs"
             >
-              <List className="h-4 w-4 mr-2" />
+              <List className="h-3.5 w-3.5 mr-1.5" />
               Add bullet
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onAddBullet(undefined, 'checkbox')}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground h-7 text-xs"
             >
-              <ListTodo className="h-4 w-4 mr-2" />
+              <ListTodo className="h-3.5 w-3.5 mr-1.5" />
               Add checkbox
             </Button>
           </div>

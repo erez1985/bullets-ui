@@ -3,7 +3,7 @@ const { Tag, Note } = require('../models');
 // Get all tags
 exports.getAllTags = async (req, res) => {
   try {
-    const tags = await Tag.find().sort({ name: 1 });
+    const tags = await Tag.find({ userId: req.userId }).sort({ name: 1 });
     
     res.json({
       success: true,
@@ -21,7 +21,7 @@ exports.getAllTags = async (req, res) => {
 // Get single tag
 exports.getTag = async (req, res) => {
   try {
-    const tag = await Tag.findById(req.params.id);
+    const tag = await Tag.findOne({ _id: req.params.id, userId: req.userId });
     
     if (!tag) {
       return res.status(404).json({
@@ -49,6 +49,7 @@ exports.createTag = async (req, res) => {
     const tagData = {
       ...req.body,
       name: req.body.name?.toLowerCase().replace(/\s+/g, '-'),
+      userId: req.userId,
     };
     
     const tag = await Tag.create(tagData);
@@ -80,8 +81,8 @@ exports.updateTag = async (req, res) => {
       updateData.name = updateData.name.toLowerCase().replace(/\s+/g, '-');
     }
     
-    const tag = await Tag.findByIdAndUpdate(
-      req.params.id,
+    const tag = await Tag.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
       updateData,
       { new: true, runValidators: true }
     );
@@ -108,7 +109,7 @@ exports.updateTag = async (req, res) => {
 // Delete tag
 exports.deleteTag = async (req, res) => {
   try {
-    const tag = await Tag.findById(req.params.id);
+    const tag = await Tag.findOne({ _id: req.params.id, userId: req.userId });
     
     if (!tag) {
       return res.status(404).json({
@@ -119,11 +120,11 @@ exports.deleteTag = async (req, res) => {
     
     // Remove tag from all notes' bullets
     await Note.updateMany(
-      { 'bullets.tags': req.params.id },
+      { 'bullets.tags': req.params.id, userId: req.userId },
       { $pull: { 'bullets.$[].tags': req.params.id } }
     );
     
-    await Tag.findByIdAndDelete(req.params.id);
+    await Tag.findOneAndDelete({ _id: req.params.id, userId: req.userId });
     
     res.json({
       success: true,
@@ -140,7 +141,7 @@ exports.deleteTag = async (req, res) => {
 // Get bullets by tag
 exports.getBulletsByTag = async (req, res) => {
   try {
-    const tag = await Tag.findById(req.params.id);
+    const tag = await Tag.findOne({ _id: req.params.id, userId: req.userId });
     
     if (!tag) {
       return res.status(404).json({
@@ -149,7 +150,7 @@ exports.getBulletsByTag = async (req, res) => {
       });
     }
     
-    const notes = await Note.find({ 'bullets.tags': req.params.id })
+    const notes = await Note.find({ 'bullets.tags': req.params.id, userId: req.userId })
       .populate('bullets.tags')
       .populate('bullets.mentions');
     
@@ -175,4 +176,3 @@ exports.getBulletsByTag = async (req, res) => {
     });
   }
 };
-

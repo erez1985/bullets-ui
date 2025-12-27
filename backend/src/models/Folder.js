@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 const folderSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true,
+    },
     name: {
       type: String,
       required: [true, 'Folder name is required'],
@@ -41,7 +47,6 @@ folderSchema.virtual('children', {
 });
 
 // Index for parent lookup
-folderSchema.index({ parentId: 1 });
+folderSchema.index({ userId: 1, parentId: 1 });
 
 module.exports = mongoose.model('Folder', folderSchema);
-

@@ -4,7 +4,10 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const connectDB = require('./config/database');
+const passport = require('./config/passport');
 const routes = require('./routes');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 
@@ -19,10 +22,10 @@ app.use(helmet());
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN 
-    ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  origin: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
     : ['http://localhost:8080', 'http://localhost:5173', 'http://localhost:3000'],
-  credentials: true,
+  credentials: true, // Important for cookies/sessions
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
@@ -30,6 +33,29 @@ app.use(cors(corsOptions));
 // Body parser
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Session configuration
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI,
+      ttl: 24 * 60 * 60, // 1 day
+    }),
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    },
+  })
+);
+
+// Passport initialization
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Logging
 if (process.env.NODE_ENV === 'development') {
@@ -80,4 +106,3 @@ process.on('uncaughtException', (err) => {
 });
 
 module.exports = app;
-

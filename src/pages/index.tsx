@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNotes } from '@/hooks/useNotes';
 import { Sidebar } from '@/components/Sidebar';
 import { NotesList } from '@/components/NotesList';
@@ -93,6 +93,26 @@ const Index = () => {
       toast.error('Failed to delete folder');
     }
   };
+
+  // Global keyboard shortcuts
+  const handleGlobalKeyDown = useCallback((e: KeyboardEvent) => {
+    // Cmd/Ctrl + N - Create new note
+    if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+      e.preventDefault();
+      createNote().then(() => {
+        toast.success('Note created');
+      }).catch(() => {
+        toast.error('Failed to create note');
+      });
+    }
+  }, [createNote]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [handleGlobalKeyDown]);
 
   // Loading state
   if (isLoading) {

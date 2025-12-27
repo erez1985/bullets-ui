@@ -1,14 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
     /* Warm, paper-like Apple Notes aesthetic */
     --background: 45 20% 97%;
-    --foreground: 30 10% 15%;
+    --foreground: black;
 
     --card: 45 25% 99%;
     --card-foreground: 30 10% 15%;
@@ -164,17 +164,17 @@
 
   /* Tag pill styling */
   .tag-pill {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-smooth;
+    @apply inline-flex items-center gap-0.5 px-1.5 py-0 rounded-full text-[12px] font-medium transition-smooth;
   }
 
   /* Mention styling */
   .mention {
-    @apply inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 text-primary font-medium text-sm;
+    @apply inline-flex items-center gap-0.5 px-1 py-0 rounded bg-primary/10 text-primary font-medium text-[10px];
   }
 
   /* Checkbox styling */
   .bullet-checkbox {
-    @apply w-4 h-4 rounded-full border-2 border-muted-foreground/40 transition-smooth cursor-pointer;
+    @apply w-3.5 h-3.5 rounded-full border-2 border-muted-foreground/40 transition-smooth cursor-pointer;
   }
 
   .bullet-checkbox:hover {

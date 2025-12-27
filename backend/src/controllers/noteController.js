@@ -5,7 +5,7 @@ exports.getAllNotes = async (req, res) => {
   try {
     const { folderId, search, tagId } = req.query;
     
-    let query = {};
+    let query = { userId: req.userId };
     
     // Filter by folder
     if (folderId && folderId !== 'all') {
@@ -48,7 +48,7 @@ exports.getAllNotes = async (req, res) => {
 // Get single note
 exports.getNote = async (req, res) => {
   try {
-    const note = await Note.findById(req.params.id)
+    const note = await Note.findOne({ _id: req.params.id, userId: req.userId })
       .populate('folderId')
       .populate('bullets.tags')
       .populate('bullets.mentions');
@@ -75,7 +75,10 @@ exports.getNote = async (req, res) => {
 // Create note
 exports.createNote = async (req, res) => {
   try {
-    const note = await Note.create(req.body);
+    const note = await Note.create({
+      ...req.body,
+      userId: req.userId,
+    });
     
     const populatedNote = await Note.findById(note._id)
       .populate('folderId')
@@ -97,8 +100,8 @@ exports.createNote = async (req, res) => {
 // Update note
 exports.updateNote = async (req, res) => {
   try {
-    const note = await Note.findByIdAndUpdate(
-      req.params.id,
+    const note = await Note.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
       req.body,
       { new: true, runValidators: true }
     )
@@ -128,7 +131,7 @@ exports.updateNote = async (req, res) => {
 // Delete note
 exports.deleteNote = async (req, res) => {
   try {
-    const note = await Note.findByIdAndDelete(req.params.id);
+    const note = await Note.findOneAndDelete({ _id: req.params.id, userId: req.userId });
     
     if (!note) {
       return res.status(404).json({
@@ -152,7 +155,7 @@ exports.deleteNote = async (req, res) => {
 // Toggle pin
 exports.togglePin = async (req, res) => {
   try {
-    const note = await Note.findById(req.params.id);
+    const note = await Note.findOne({ _id: req.params.id, userId: req.userId });
     
     if (!note) {
       return res.status(404).json({
@@ -184,7 +187,7 @@ exports.togglePin = async (req, res) => {
 // Add bullet to note
 exports.addBullet = async (req, res) => {
   try {
-    const note = await Note.findById(req.params.id);
+    const note = await Note.findOne({ _id: req.params.id, userId: req.userId });
     
     if (!note) {
       return res.status(404).json({
@@ -243,7 +246,7 @@ exports.updateBullet = async (req, res) => {
     const { id, bulletId } = req.params;
     const updates = req.body;
     
-    const note = await Note.findById(id);
+    const note = await Note.findOne({ _id: id, userId: req.userId });
     
     if (!note) {
       return res.status(404).json({
@@ -286,7 +289,7 @@ exports.deleteBullet = async (req, res) => {
   try {
     const { id, bulletId } = req.params;
     
-    const note = await Note.findById(id);
+    const note = await Note.findOne({ _id: id, userId: req.userId });
     
     if (!note) {
       return res.status(404).json({
@@ -328,4 +331,3 @@ exports.deleteBullet = async (req, res) => {
     });
   }
 };
-

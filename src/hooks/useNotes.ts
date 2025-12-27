@@ -283,17 +283,81 @@ export function useNotes() {
   // Add bullet to note
   const addBullet = useCallback(
     async (noteId: string, afterBulletId?: string, type: 'checkbox' | 'bullet' = 'bullet') => {
-      try {
-        const apiNote = await notesApi.addBullet(noteId, { afterBulletId, type });
-        const updatedNote = transformNote(apiNote);
-        setNotes((prev) =>
-          prev.map((note) => (note.id === noteId ? updatedNote : note))
-        );
-        return updatedNote.bullets[updatedNote.bullets.length - 1];
-      } catch (err: any) {
-        console.error('Failed to add bullet:', err);
-        throw err;
-      }
+      // Create optimistic bullet with temporary ID
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const optimisticBullet: Bullet = {
+        id: tempId,
+        content: '',
+        type,
+        checked: false,
+        tags: [],
+        mentions: [],
+        indent: 0,
+        noteId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Optimistically add bullet to UI immediately
+      setNotes((prev) =>
+        prev.map((note) => {
+          if (note.id !== noteId) return note;
+          
+          const bullets = [...note.bullets];
+          if (afterBulletId) {
+            const afterIndex = bullets.findIndex((b) => b.id === afterBulletId);
+            if (afterIndex !== -1) {
+              // Copy indent from previous bullet
+              optimisticBullet.indent = bullets[afterIndex].indent;
+              bullets.splice(afterIndex + 1, 0, optimisticBullet);
+            } else {
+              bullets.push(optimisticBullet);
+            }
+          } else {
+            bullets.push(optimisticBullet);
+          }
+          
+          return { ...note, bullets, updatedAt: new Date() };
+        })
+      );
+
+      // Make API call in background - don't await, just fire and update ID when done
+      notesApi.addBullet(noteId, { afterBulletId, type })
+        .then((apiNote) => {
+          const updatedNote = transformNote(apiNote);
+          // Find the new bullet from server response
+          const newBullet = updatedNote.bullets.find((b) => 
+            b.content === '' && !b.id.startsWith('temp-')
+          ) || updatedNote.bullets[updatedNote.bullets.length - 1];
+          
+          // Only update the temp ID to real ID, preserve all other user changes
+          setNotes((prev) =>
+            prev.map((note) => {
+              if (note.id !== noteId) return note;
+              return {
+                ...note,
+                bullets: note.bullets.map((b) => 
+                  b.id === tempId ? { ...b, id: newBullet.id } : b
+                ),
+              };
+            })
+          );
+        })
+        .catch((err) => {
+          console.error('Failed to add bullet:', err);
+          // Remove optimistic bullet on error
+          setNotes((prev) =>
+            prev.map((note) => {
+              if (note.id !== noteId) return note;
+              return {
+                ...note,
+                bullets: note.bullets.filter((b) => b.id !== tempId),
+              };
+            })
+          );
+        });
+
+      return optimisticBullet;
     },
     []
   );
@@ -332,15 +396,44 @@ export function useNotes() {
 
   // Delete bullet
   const deleteBullet = useCallback(async (noteId: string, bulletId: string) => {
-    try {
-      const apiNote = await notesApi.deleteBullet(noteId, bulletId);
-      const updatedNote = transformNote(apiNote);
-      setNotes((prev) =>
-        prev.map((note) => (note.id === noteId ? updatedNote : note))
-      );
-    } catch (err: any) {
-      console.error('Failed to delete bullet:', err);
+    // Store the bullet for potential restoration on error
+    let deletedBullet: Bullet | undefined;
+    let deletedIndex: number = -1;
+
+    // Optimistically remove bullet immediately
+    setNotes((prev) =>
+      prev.map((note) => {
+        if (note.id !== noteId) return note;
+        deletedIndex = note.bullets.findIndex((b) => b.id === bulletId);
+        deletedBullet = note.bullets[deletedIndex];
+        return {
+          ...note,
+          bullets: note.bullets.filter((b) => b.id !== bulletId),
+          updatedAt: new Date(),
+        };
+      })
+    );
+
+    // Don't send API request for temp bullets (not yet saved)
+    if (bulletId.startsWith('temp-')) {
+      return;
     }
+
+    // Make API call in background
+    notesApi.deleteBullet(noteId, bulletId).catch((err) => {
+      console.error('Failed to delete bullet:', err);
+      // Restore the bullet on error
+      if (deletedBullet && deletedIndex !== -1) {
+        setNotes((prev) =>
+          prev.map((note) => {
+            if (note.id !== noteId) return note;
+            const bullets = [...note.bullets];
+            bullets.splice(deletedIndex, 0, deletedBullet!);
+            return { ...note, bullets };
+          })
+        );
+      }
+    });
   }, []);
 
   // Create tag
